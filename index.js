@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const User = require('./userSchema');
+const User = require('./models/userSchema');
+const ActivityLog = require('./models/activityLogSchema');
+const logActivity = require('./utils/activity');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 
@@ -50,6 +52,8 @@ app.post('/login', async (req, res) => {
         user.lockUntil = null;
         await user.save();
 
+        // Log user activity
+        logActivity(user._id, 'User logged in', req.ip);
         // Generate a JWT token
         const token = jwt.sign({ userId: user._id, username: user.username }, JWT_SECRET, { expiresIn: '1h' });
 
@@ -84,6 +88,8 @@ app.post('/register', async (req, res) => {
         // Save the user to the database
         await user.save();
 
+        logActivity(user._id, 'User registered', req.ip);
+
         // Respond with success message
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
@@ -92,6 +98,14 @@ app.post('/register', async (req, res) => {
     }
 });
 
+app.get('/logs', (req,res) =>{
+    try{
+        const logs = ActivityLog.find();
+        res.json(logs);
+    }catch(err){
+        res.status(500).json({message: err.message})
+    }
+})
 // MongoDB connection
 mongoose.connect('mongodb://localhost:27017/winter')
     .then(() => console.log('MongoDB connected'))
