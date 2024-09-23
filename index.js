@@ -98,9 +98,9 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.get('/logs', (req,res) =>{
+app.get('/logs', async (req,res) =>{
     try{
-        const logs = ActivityLog.find();
+        const logs = await ActivityLog.find();
         res.json(logs);
     }catch(err){
         res.status(500).json({message: err.message})
